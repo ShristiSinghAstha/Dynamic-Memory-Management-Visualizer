@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Memory Management Visualizer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #1e1e2f;
+      color: #f1f1f1;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    h1 { margin-top: 20px; text-align: center; }
+    .controls, .log, .frames, .chart-container {
+      margin: 20px;
+      width: 90%;
+      max-width: 700px;
+    }
+    .frames {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    .frame {
+      width: 60px;
+      height: 60px;
+      border: 2px solid #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2em;
+      background-color: #2c2c3a;
+      border-radius: 8px;
+    }
+    .log {
+      background: #2c2c3a;
+      padding: 10px;
+      height: 150px;
+      overflow-y: auto;
+      border-radius: 8px;
+    }
+    button {
+      padding: 8px 16px;
+      margin: 5px;
+      border: none;
+      border-radius: 4px;
+      background-color: #4caf50;
+      color: white;
+      cursor: pointer;
+    }
+    input, select {
+      padding: 5px;
+      margin: 5px;
+      border-radius: 4px;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      background-color: #444;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+    .progress {
+      height: 100%;
+      width: 0;
+      background-color: #4caf50;
+      border-radius: 5px;
+      transition: width 0.3s;
+    }
+  </style>
+</head>
+<body>
+  <h1>Memory Management Visualizer</h1>
+  <div class="controls">
+    <label>Page Reference String (space separated): </label>
+    <input type="text" id="pages" value="7 0 1 2 0 3 0 4 2 3 0 3 2" /><br />
+    <label>Frame Size: </label>
+    <input type="number" id="frameSize" value="3" min="1" />
+    <label>Speed (ms): </label>
+    <input type="number" id="speed" value="1000" min="100" />
+    <label>Mode: </label>
+    <select id="mode">
+      <option value="auto">Auto</option>
+      <option value="step">Step-by-Step</option>
+    </select>
+    <br />
+    <button onclick="startSimulation('FIFO')">Run FIFO</button>
+    <button onclick="startSimulation('LRU')">Run LRU</button>
+    <button onclick="nextStep()">Next Step</button>
+    <button onclick="exportLog()">Export Log to PDF</button>
+  </div>
+
+  <div class="frames" id="frames"></div>
+  <div class="progress-bar"><div class="progress" id="progress"></div></div>
+  <div class="log" id="log"></div>
+  <div class="chart-container">
+    <canvas id="performanceChart"></canvas>
+  </div>
+
+  <audio id="beep" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    const logArea = document.getElementById('log');
+    const framesArea = document.getElementById('frames');
+    const progressBar = document.getElementById('progress');
+    const beep = document.getElementById('beep');
+    let performanceChart;
+    let simulationData = {};
+    let simulationPaused = false;
+    let currentStep = 0;
+
+    function log(message) {
+      logArea.innerHTML += message + '<br>';
+      logArea.scrollTop = logArea.scrollHeight;
+    }
+
+    function updateFrames(frames) {
+      framesArea.innerHTML = '';
+      frames.forEach(frame => {
+        const div = document.createElement('div');
+        div.className = 'frame';
+        div.textContent = frame !== null ? frame : '-';
+        framesArea.appendChild(div);
+      });
+    }
+
+    function updateProgress(current, total) {
+      const percentage = (current / total) * 100;
+      progressBar.style.width = percentage + '%';
+    }
+
+    function playBeep() {
+      beep.currentTime = 0;
+      beep.play();
+    }
+
+    function updateChart(hits, faults) {
+      if (!performanceChart) {
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        performanceChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['Hits', 'Faults'],
+            datasets: [{
+              label: 'Performance',
+              data: [hits, faults],
+              backgroundColor: ['#4caf50', '#f44336']
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: {
+                beginAtZero: true
+              }
+            }
+          }
+        });
+      } else {
+        performanceChart.data.datasets[0].data = [hits, faults];
+        performanceChart.update();
+      }
+    }
+
+    function prepareSimulation(type) {
+      const pages = document.getElementById('pages').value.trim().split(/\s+/).map(Number).filter(n => !isNaN(n));
+      const frameSize = parseInt(document.getElementById('frameSize').value);
+      const speed = parseInt(document.getElementById('speed').value);
+      simulationData = {
+        pages,
+        frameSize,
+        speed,
+        type,
+        frames: Array(frameSize).fill(null),
+        pageFaults: 0,
+        pageHits: 0,
+        history: [],
+        currentIndex: 0
+      };
+      logArea.innerHTML = '';
+      updateFrames(simulationData.frames);
+      updateProgress(0, pages.length);
+      updateChart(0, 0);
+      currentStep = 0;
+      simulationPaused = false;
+    }
+
+    async function startSimulation(type) {
+      prepareSimulation(type);
+      if (document.getElementById('mode').value === 'step') {
+        simulationPaused = true;
+        log('Step-by-step mode activated. Press "Next Step" to proceed.');
+      } else {
+        while (simulationData.currentIndex < simulationData.pages.length) {
+          await runStep();
+          await new Promise(resolve => setTimeout(resolve, simulationData.speed));
+        }
+        finishSimulation();
+      }
+    }
+
+    async function nextStep() {
+      if (!simulationData.pages) return;
+      if (simulationPaused && simulationData.currentIndex < simulationData.pages.length) {
+        await runStep();
+        if (simulationData.currentIndex >= simulationData.pages.length) {
+          finishSimulation();
+        }
+      }
+    }
+
+    async function runStep() {
+      const { pages, frames, history, type } = simulationData;
+      const page = pages[simulationData.currentIndex];
+      playBeep();
+      updateProgress(simulationData.currentIndex + 1, pages.length);
+
+      if (frames.includes(page)) {
+        log(`✅ Page ${page} hit.`);
+        simulationData.pageHits++;
+        if (type === 'LRU') {
+          simulationData.history = history.filter(p => p !== page);
+          simulationData.history.push(page);
+        }
+      } else {
+        log(`❌ Page ${page} fault.`);
+        simulationData.pageFaults++;
+        if (frames.includes(null)) {
+          frames[frames.indexOf(null)] = page;
+        } else {
+          const removePage = type === 'FIFO' ? history.shift() : history.shift();
+          const index = frames.indexOf(removePage);
+          frames[index] = page;
+        }
+        simulationData.history.push(page);
+      }
+
+      updateFrames(frames);
+      updateChart(simulationData.pageHits, simulationData.pageFaults);
+      simulationData.currentIndex++;
+    }
+
+    function finishSimulation() {
+      log('<br>Simulation Complete! 🎉');
+      log(`Total Page Hits: ${simulationData.pageHits}`);
+      log(`Total Page Faults: ${simulationData.pageFaults}`);
+    }
+
+    function exportLog() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const lines = logArea.innerText.split('\n');
+      lines.forEach((line, i) => {
+        doc.text(line, 10, 10 + i * 10);
+      });
+      doc.save('memory_simulation_log.pdf');
+    }
+  </script>
+</body>
+</html>
