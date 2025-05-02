@@ -85,6 +85,7 @@
     <input type="number" id="frameSize" value="3" min="1" />
     <label>Speed (ms): </label>
     <input type="number" id="speed" value="1000" min="100" />
+    <br />
     <label>Mode: </label>
     <select id="mode">
       <option value="auto">Auto</option>
@@ -93,8 +94,12 @@
     <br />
     <button onclick="startSimulation('FIFO')">Run FIFO</button>
     <button onclick="startSimulation('LRU')">Run LRU</button>
+    <button onclick="startSimulation('OPTIMAL')">Run Optimal</button>
     <button onclick="nextStep()">Next Step</button>
+    <button onclick="terminateSimulation()">Terminate</button>
     <button onclick="exportLog()">Export Log to PDF</button>
+    <button onclick="showPageTable()">Show Page Table</button>
+    <button onclick="resetSimulation()">Reset Simulation</button>
   </div>
 
   <div class="frames" id="frames"></div>
@@ -237,10 +242,32 @@
         if (frames.includes(null)) {
           frames[frames.indexOf(null)] = page;
         } else {
-          const removePage = type === 'FIFO' ? history.shift() : history.shift();
+          let removePage;
+
+          if (type === 'FIFO') {
+            removePage = history.shift();
+          } else if (type === 'LRU') {
+            removePage = history.shift();
+          } else if (type === 'OPTIMAL') {
+            const future = pages.slice(simulationData.currentIndex + 1);
+            let indices = frames.map(f => ({
+              page: f,
+              index: future.indexOf(f)
+            }));
+
+            let pageToRemove;
+            if (indices.some(obj => obj.index === -1)) {
+              pageToRemove = indices.find(obj => obj.index === -1).page;
+            } else {
+              pageToRemove = indices.reduce((a, b) => a.index > b.index ? a : b).page;
+            }
+            removePage = pageToRemove;
+          }
+
           const index = frames.indexOf(removePage);
           frames[index] = page;
         }
+
         simulationData.history.push(page);
       }
 
@@ -255,6 +282,12 @@
       log(`Total Page Faults: ${simulationData.pageFaults}`);
     }
 
+    function terminateSimulation() {
+      simulationPaused = true;
+      simulationData.currentIndex = simulationData.pages.length;
+      log('<br>Simulation Terminated.');
+    }
+
     function exportLog() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
@@ -263,6 +296,26 @@
         doc.text(line, 10, 10 + i * 10);
       });
       doc.save('memory_simulation_log.pdf');
+    }
+
+    function showPageTable() {
+      const { frames } = simulationData;
+      let tableLog = '<br>📋 Page Table:<br>';
+      frames.forEach((page, index) => {
+        tableLog += `Frame ${index}: ${page !== null ? page : '-'}<br>`;
+      });
+      log(tableLog);
+    }
+
+    function resetSimulation() {
+      simulationData = {};
+      simulationPaused = false;
+      currentStep = 0;
+      logArea.innerHTML = '';
+      updateFrames([]);
+      updateProgress(0, 1);
+      updateChart(0, 0);
+      log('🔁 Simulation Reset. Enter new values to start again.');
     }
   </script>
 </body>
