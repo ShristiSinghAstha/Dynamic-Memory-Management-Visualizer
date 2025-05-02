@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+  <style>
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in-up {
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+    }
+    .highlight {
+      background: linear-gradient(90deg, rgba(56, 182, 255, 0.2) 0%, rgba(56, 182, 255, 0) 100%);
+      border-left: 4px solid #38b6ff;
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+  <!-- Navigation -->
+  <nav class="bg-gray-800 py-4 px-6 shadow-lg sticky top-0 z-10">
+    <div class="max-w-6xl mx-auto flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16V4m8 0v12m4-8H4" />
+        </svg>
+        <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-green-500">Memory Management Visualizer</span>
+      </div>
+      <div class="flex space-x-4">
+        <a href="#concepts" class="px-4 py-2 rounded-lg hover:bg-gray-700 transition">Concepts</a>
+        <a href="#about" class="px-4 py-2 rounded-lg hover:bg-gray-700 transition">About</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Memory Concepts -->
+  <section id="concepts" class="py-16 px-6 bg-gray-800">
+    <div class="max-w-6xl mx-auto">
+      <h2 class="text-3xl font-bold mb-8">Memory Management Concepts</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Paging -->
+        <div class="card bg-gray-700 p-6 rounded-xl shadow-lg transition duration-300 animate-fade-in-up">
+          <h3 class="text-xl font-semibold text-blue-400 mb-2">Paging</h3>
+          <p class="text-gray-300 mb-4">Memory is divided into fixed-size pages. Each page maps to a frame in physical memory.</p>
+          <div class="highlight p-4 rounded-lg">
+            <ul class="list-disc list-inside text-sm space-y-1">
+              <li>Fixed size blocks</li>
+              <li>Avoids external fragmentation</li>
+              <li>Page Table for logical-to-physical mapping</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Segmentation -->
+        <div class="card bg-gray-700 p-6 rounded-xl shadow-lg transition duration-300 animate-fade-in-up">
+          <h3 class="text-xl font-semibold text-purple-400 mb-2">Segmentation</h3>
+          <p class="text-gray-300 mb-4">Memory is divided by logical units like code, stack, and heap. Each has a base and limit.</p>
+          <div class="highlight p-4 rounded-lg">
+            <ul class="list-disc list-inside text-sm space-y-1">
+              <li>Variable-sized segments</li>
+              <li>Better program structure visibility</li>
+              <li>Can lead to external fragmentation</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Allocation Strategies -->
+        <div class="card bg-gray-700 p-6 rounded-xl shadow-lg transition duration-300 animate-fade-in-up">
+          <h3 class="text-xl font-semibold text-green-400 mb-2">Allocation Strategies</h3>
+          <p class="text-gray-300 mb-4">Explore how First Fit, Best Fit, and Worst Fit allocate memory to processes.</p>
+          <div class="highlight p-4 rounded-lg">
+            <ul class="list-disc list-inside text-sm space-y-1">
+              <li>First Fit: fills first available hole</li>
+              <li>Best Fit: fills smallest suitable hole</li>
+              <li>Worst Fit: fills largest hole</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- FIFO -->
+        <div class="card bg-gray-700 p-6 rounded-xl shadow-lg transition duration-300 animate-fade-in-up">
+          <h3 class="text-xl font-semibold text-yellow-400 mb-2">FIFO (First-In-First-Out)</h3>
+          <p class="text-gray-300 mb-4">Pages are removed in the order they were loaded into memory, regardless of usage.</p>
+          <div class="highlight p-4 rounded-lg">
+            <ul class="list-disc list-inside text-sm space-y-1">
+              <li>Oldest page is replaced first</li>
+              <li>Simple and queue-based logic</li>
+              <li>Can lead to suboptimal replacements</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- LRU -->
+        <div class="card bg-gray-700 p-6 rounded-xl shadow-lg transition duration-300 animate-fade-in-up">
+          <h3 class="text-xl font-semibold text-pink-400 mb-2">LRU (Least Recently Used)</h3>
+          <p class="text-gray-300 mb-4">Replaces the page that hasn't been accessed for the longest time.</p>
+          <div class="highlight p-4 rounded-lg">
+            <ul class="list-disc list-inside text-sm space-y-1">
+              <li>More accurate than FIFO</li>
+              <li>Tracks access history</li>
+              <li>Can be expensive to implement efficiently</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- About Section -->
+  <section id="about" class="py-16 px-6 bg-gray-900">
+    <div class="max-w-6xl mx-auto text-center">
+      <h2 class="text-3xl font-bold mb-8">About This Tool</h2>
+      <div class="flex flex-col md:flex-row justify-between items-start gap-10">
+        <!-- Why Use This Tool -->
+        <div class="md:w-1/2 text-left">
+          <h3 class="text-2xl text-blue-400 font-semibold mb-2">Why Use This Tool?</h3>
+          <p class="text-gray-300 mb-4">This interactive tool is designed for students and educators to simulate and visualize memory allocation techniques and memory models in a user-friendly manner.</p>
+          <div class="bg-gray-800 p-4 rounded-lg mt-4">
+            <h4 class="font-bold mb-2">Try This:</h4>
+            <p class="text-gray-400">Simulate allocating 3 processes (20KB, 10KB, 30KB) into memory blocks (25KB, 15KB, 35KB) and compare strategies!</p>
+          </div>
+        </div>
+
+        <!-- Key Features -->
+        <div class="md:w-1/2 text-left">
+          <h3 class="text-2xl text-green-400 font-semibold mb-2">Key Features</h3>
+          <ul class="list-disc list-inside space-y-2 text-gray-300">
+            <li>Graphical memory block visualization</li>
+            <li>Step-by-step memory allocation</li>
+            <li>Paging and segmentation simulators</li>
+            <li>Live fragmentation updates</li>
+            <li>Download simulation reports</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 py-6 mt-8 text-center">
+    <p class="text-gray-500">Memory Management Visualizer - Interactive OS Education Tool<br/>
+      &copy; 2025 All Rights Reserved</p>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('animate-fade-in-up');
+          }
+        });
+      }, { threshold: 0.1 });
+
+      document.querySelectorAll('.animate-fade-in-up').forEach(el => observer.observe(el));
+    });
+  </script>
+</body>
+</html>
