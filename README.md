@@ -4,6 +4,7 @@
 An interactive web-based visualizer to understand and simulate core Operating System memory management concepts.
 
 📚 Concepts Covered
+
 🔹 Paging
 
 Memory divided into fixed-size pages
