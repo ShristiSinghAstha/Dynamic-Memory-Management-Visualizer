@@ -1,4 +1,4 @@
-# Dynamic-Memory-Management-Visualizer
+Dynamic-Memory-Management-Visualizer
 🧠 Memory Management Visualizer
 
 An interactive web-based visualizer to understand and simulate core Operating System memory management concepts.
